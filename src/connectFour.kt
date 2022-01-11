@@ -76,7 +76,10 @@ fun makeMove(board: MutableList<MutableList<Char>>, playerName: String, columns:
     }
 
     //Вызвать функцию проверки победителя.
-    //trackingMoves(playerInput, board, figure, rowForSearch)
+    if (playerInput != "end") {
+        val win: Boolean = trackingMoves(playerInput, board, figure, rowForSearch)
+        if (win) return "Player $playerName won"
+    }
 
     return playerInput
 }
@@ -91,6 +94,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
         when (columnIndex) {
             1 -> {
                 var count = 1
+                println("horizontalSearch: 1")
                 for (i in columnIndex + columnStep until columnStep * 4 step columnStep) {
                     if (board[row][i] == figure) count++
                 }
@@ -98,25 +102,31 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             board[row].size - columnStep -> {
                 var count = 1
+                println("horizontalSearch: board[row].size - columnStep")
                 for (i in columnIndex - columnStep downTo columnIndex - columnStep * 3 step columnStep) {
                     if (board[row][i] == figure) count++
                 }
                 winner = count == 4
             }
             else -> {
-                var index = columnIndex
                 var count = 1
-
-                while (index <= board[row].size - columnStep || count != 4) {
-                    index += columnStep
-                    if (board[row][index] == figure) count++ else break
+                var searchCol = columnIndex
+                println("horizontalSearch: else")
+                //right direction
+                while (count != 4) {
+                    println("horizontalSearch: while 1")
+                    searchCol += columnStep
+                    if (searchCol > board[row].size - columnStep) break
+                    if (board[row][searchCol] == figure) count++ else break
                 }
 
-                index = columnIndex
-
-                while (index >= 1 || count != 4) {
-                    index -= columnStep
-                    if (board[row][index] == figure) count++ else break
+                searchCol = columnIndex
+                //left direction
+                while (count != 4) {
+                    println("horizontalSearch: while 2")
+                    searchCol -= columnStep
+                    if (searchCol < 1) break
+                    if (board[row][searchCol] == figure) count++ else break
                 }
 
                 winner = count == 4
@@ -129,6 +139,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
         val winner: Boolean
         when (row) {
             board.size - columnStep -> {
+                println("verticalSearch: board.size - columnStep")
                 var count = 1
                 for (i in row - 1 downTo row - 3) {
                     if (board[i][columnIndex] == figure) count++
@@ -136,6 +147,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 winner = count == 4
             }
             0 -> {
+                println("verticalSearch: 0")
                 var count = 1
                 for (i in 1..3) {
                     if (board[i][columnIndex] == figure) count++
@@ -143,19 +155,22 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 winner = count == 4
             }
             else -> {
-                var index = row
+                println("verticalSearch: else")
                 var count = 1
+                var searchRow = row
 
-                while (index <= board.size - columnStep || count != 4) {
-                    index++
-                    if (board[index][columnIndex] == figure) count++ else break
+                while (count != 4) {
+                    searchRow++
+                    if (searchRow > board.size - columnStep) break
+                    if (board[searchRow][columnIndex] == figure) count++ else break
                 }
 
-                index = row
+                searchRow = row
 
-                while (index >= 0 || count != 4) {
-                    index--
-                    if (board[index][columnIndex] == figure) count++ else break
+                while (count != 4) {
+                    searchRow--
+                    if (searchRow < 0) break
+                    if (board[searchRow][columnIndex] == figure) count++ else break
                 }
 
                 winner = count == 4
@@ -169,6 +184,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
         when {
             //lower left corner
             row == board.size - columnStep && columnIndex == 1 -> {
+                println("diagonalSearch: lower left corner")
                 var count = 1
                 var searchRow = row - 1
                 for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
@@ -179,6 +195,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //lower right corner
             row == board.size - columnStep && columnIndex == board[row].size - columnStep -> {
+                println("diagonalSearch: lower right corner")
                 var count = 1
                 var searchRow = row - 1
                 for (i in columnIndex - columnStep downTo  columnIndex - columnStep * 3 step columnStep) {
@@ -189,6 +206,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //upper left corner
             row == 0 - columnStep && columnIndex == 1 -> {
+                println("diagonalSearch: upper left corner")
                 var count = 1
                 var searchRow = 1
                 for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
@@ -199,6 +217,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //upper right corner
             row == 0 && columnIndex == board[row].size - columnStep -> {
+                println("diagonalSearch: upper right corner")
                 var count = 1
                 var searchRow = 1
                 for (i in columnIndex - columnStep downTo  columnIndex - columnStep * 3 step columnStep) {
@@ -209,11 +228,14 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //lower border
             row == board.size - columnStep && columnIndex in 3..board[row].size - columnStep * 2 -> {
+                println("diagonalSearch: lower border")
                 var count = 1
                 var searchRow = row - 1
 
                 //right direction search
+
                 if (columnIndex + columnStep * 3 <= board[row].size - columnStep) {
+                    println("diagonalSearch: lower border - right direction search")
                     for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
                         if (board[searchRow][i] == figure) count++
                         searchRow--
@@ -222,6 +244,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
 
                 //left direction search
                 if (count != 4 && columnIndex - columnStep * 3 >= 1) {
+                    println("diagonalSearch: lower border - left direction search")
                     count = 1
                     searchRow = row - 1
                     for (i in columnIndex - columnStep downTo  columnIndex - columnStep * 3 step columnStep) {
@@ -234,11 +257,13 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //left border
             row in 1 until board.size - columnStep && columnIndex == 1 -> {
+                println("diagonalSearch: left border")
                 var count = 1
                 var searchRow = row
 
                 //up direction search
                 if (row - 3 >= 0) {
+                    println("diagonalSearch: left border - up direction search")
                     for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
                         searchRow--
                         if (board[searchRow][i] == figure) count++
@@ -246,6 +271,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 }
                 //down direction search
                 if (count != 4 && row + 3 <= board.size - 2) {
+                    println("diagonalSearch: left border - down direction search")
                     count = 1
                     searchRow = row
                     for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
@@ -258,11 +284,13 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //upper border
             row == 0 && columnIndex in 3..board[row].size - columnStep * 2 -> {
+                println("diagonalSearch: upper border")
                 var count = 1
                 var searchRow = 1
 
                 //right direction search
                 if (columnIndex + columnStep * 3 <= board[row].size - columnStep) {
+                    println("diagonalSearch: upper border - right direction search")
                     for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
                         if (board[searchRow][i] == figure) count++
                         searchRow++
@@ -270,6 +298,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 }
                 //left direction search
                 if (count != 4 && columnIndex - columnStep * 3 >= 1) {
+                    println("diagonalSearch: upper border - left direction search")
                     count = 1
                     searchRow = 1
                     for (i in columnIndex - columnStep downTo  columnIndex - columnStep * 3 step columnStep) {
@@ -281,11 +310,13 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             //right border
             row in 1 until board.size - columnStep && columnIndex == board[row].size - columnStep -> {
+                println("diagonalSearch: right border")
                 var count = 1
                 var searchRow = row
 
                 //up direction search
                 if (row - 3 >= 0) {
+                    println("diagonalSearch: right border - up direction search")
                     for (i in columnIndex - columnStep downTo  columnIndex - columnStep * 3 step columnStep) {
                         searchRow--
                         if (board[searchRow][i] == figure) count++
@@ -293,6 +324,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 }
                 //down direction search
                 if (count != 4 && row + 3 <= board.size - 2) {
+                    println("diagonalSearch: right border - down direction search")
                     count = 1
                     searchRow = row
                     for (i in columnIndex - columnStep downTo  columnIndex - columnStep * 3 step columnStep) {
@@ -303,13 +335,16 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 winner = count == 4
             }
             else -> {
+                println("diagonalSearch: else")
                 var count = 1
                 var searchRow = row - 1
                 var searchCol = columnIndex + columnStep
 
                 //1st part: up-right & down-left
                 //up-right
-                while (searchRow >= 0 || searchCol <= board[row].size - columnStep) {
+                while (searchRow >= 0) {
+                    println("diagonalSearch: else - 1st part up-right")
+                    if (searchCol > board[row].size - columnStep) break
                     if (board[searchRow][searchCol] == figure) count++ else break
                     searchRow--
                     searchCol += columnStep
@@ -320,7 +355,9 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                     searchRow = row + 1
                     searchCol = columnIndex - columnStep
 
-                    while (searchRow <= board.size - 2 || searchCol >= 1 || count != 4) {
+                    while (count != 4) {
+                        println("diagonalSearch: else - 1st part down-left")
+                        if(searchRow > board.size - 2 || searchCol < 1) break
                         if (board[searchRow][searchCol] == figure) count++ else break
                         searchRow++
                         searchCol -= columnStep
@@ -335,7 +372,9 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                     searchRow = row - 1
                     searchCol = columnIndex - columnStep
 
-                    while (searchRow >= 0 || searchCol >= 1 || count != 4) {
+                    while (count != 4) {
+                        println("diagonalSearch: else - 2nd part up-left")
+                        if (searchRow < 0 || searchCol < 1) break
                         if (board[searchRow][searchCol] == figure) count++ else break
                         searchRow--
                         searchCol -= columnIndex
@@ -347,10 +386,12 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                     searchRow = row + 1
                     searchCol = columnIndex + columnStep
 
-                    while (searchRow <= board.size - 2 || searchCol <= board[row].size - columnIndex || count != 4) {
+                    while (count != 4) {
+                        println("diagonalSearch: else - 2nd part down-right")
+                        if (searchRow > board.size - 2 || searchCol > board[row].size - columnIndex )break
                         if (board[searchRow][searchCol] == figure) count++ else break
-                        searchRow--
-                        searchCol -= columnIndex
+                        searchRow++
+                        searchCol += columnIndex
                     }
                 }
 
@@ -375,11 +416,34 @@ fun letsPlay(
     firstPlayerFigure: Char,
     secondPlayerFigure: Char,
 ) {
+    var countFirstPlayerMoves = 0
+    var countSecondPlayerMoves = 0
+
     while (true) {
         val firstPlayerOut = makeMove(board, firstPlayerName, columns, firstPlayerFigure)
-        if (firstPlayerOut.lowercase() == "end") break
+        countFirstPlayerMoves++
+        if (firstPlayerOut.toIntOrNull() == null && firstPlayerOut.lowercase() != "end") {
+            println("$firstPlayerOut\nGame over!")
+            break
+        } else if (firstPlayerOut.lowercase() == "end") {
+            break
+        } else if (countFirstPlayerMoves + countSecondPlayerMoves == (board.size - 1) * columns) {
+            println("It is a draw")
+            break
+        }
+
+
         val secondPlayerOut = makeMove(board, secondPlayerName, columns, secondPlayerFigure)
-        if (secondPlayerOut.lowercase() == "end") break
+        countSecondPlayerMoves++
+        if (secondPlayerOut.toIntOrNull() == null && secondPlayerOut.lowercase() != "end") {
+            println("$secondPlayerOut\nGame over!")
+            break
+        } else if (secondPlayerOut.lowercase() == "end") {
+            break
+        } else if (countFirstPlayerMoves + countSecondPlayerMoves == (board.size - 1) * columns) {
+            println("It is a draw")
+            break
+        }
     }
 }
 
