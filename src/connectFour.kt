@@ -84,7 +84,7 @@ fun makeMove(board: MutableList<MutableList<Char>>, playerName: String, columns:
 fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: Char, row: Int): Boolean {
     val columnIndex = move.toInt() * 2 - 1
     val columnStep = 2
-    var result = false
+    var result: Boolean
 
     fun horizontalSearch(): Boolean {
         val winner: Boolean
@@ -304,14 +304,65 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
             }
             else -> {
                 var count = 1
-                //TODO
+                var searchRow = row - 1
+                var searchCol = columnIndex + columnStep
+
                 //1st part: up-right & down-left
+                //up-right
+                while (searchRow >= 0 || searchCol <= board[row].size - columnStep) {
+                    if (board[searchRow][searchCol] == figure) count++ else break
+                    searchRow--
+                    searchCol += columnStep
+                }
+
+                //down-left
+                if (count != 4) {
+                    searchRow = row + 1
+                    searchCol = columnIndex - columnStep
+
+                    while (searchRow <= board.size - 2 || searchCol >= 1 || count != 4) {
+                        if (board[searchRow][searchCol] == figure) count++ else break
+                        searchRow++
+                        searchCol -= columnStep
+                    }
+                }
+
                 //2nd part: up-left & down-right
+
+                //up-left
+                if (count != 4) {
+                    count = 1
+                    searchRow = row - 1
+                    searchCol = columnIndex - columnStep
+
+                    while (searchRow >= 0 || searchCol >= 1 || count != 4) {
+                        if (board[searchRow][searchCol] == figure) count++ else break
+                        searchRow--
+                        searchCol -= columnIndex
+                    }
+                }
+
+                //down-right
+                if (count != 4) {
+                    searchRow = row + 1
+                    searchCol = columnIndex + columnStep
+
+                    while (searchRow <= board.size - 2 || searchCol <= board[row].size - columnIndex || count != 4) {
+                        if (board[searchRow][searchCol] == figure) count++ else break
+                        searchRow--
+                        searchCol -= columnIndex
+                    }
+                }
+
                 winner = count == 4
             }
         }
         return winner
     }
+
+    result = horizontalSearch()
+    if (!result) result = verticalSearch()
+    if (!result) result = diagonalSearch()
 
     return result
 }
