@@ -6,6 +6,8 @@ const val TRIPLE_JOINT = '\u2569'
 const val HORIZONTAL_JOINT = '\u2550'
 const val VERTICAL_JOINT = '\u2551'
 const val WHITESPACE_CHAR = '\u0020'
+const val DEFAULT_NUMBERS_OF_ROWS = 6
+const val DEFAULT_NUMBERS_OF_COLUMNS = 7
 
 fun drawBoard(columns: Int, board: MutableList<MutableList<Char>>) {
     for (i in 1..columns) if (i < columns) print(" $i") else print(" $i\n")
@@ -15,8 +17,8 @@ fun drawBoard(columns: Int, board: MutableList<MutableList<Char>>) {
     }
 }
 
-fun buildBoard(rows: Int, cols: Int): MutableList<MutableList<Char>> {
-    val boardWidth = cols * 2 + 1
+fun buildBoard(rows: Int, columns: Int): MutableList<MutableList<Char>> {
+    val boardWidth = columns * 2 + 1
     val board = MutableList(rows + 1) { MutableList(boardWidth) {WHITESPACE_CHAR} }
 
     for (i in 0..rows) {
@@ -46,10 +48,7 @@ fun makeMove(board: MutableList<MutableList<Char>>, playerName: String, columns:
         playerInput = readLine()!!
 
         when {
-            playerInput.lowercase() == "end" -> {
-                println("Game over!")
-                break
-            }
+            playerInput.lowercase() == "end" -> break
             playerInput.toIntOrNull() == null -> println("Incorrect column number")
             playerInput.toIntOrNull() != null && playerInput.toInt() !in 1..columns -> {
                 println("The column number is out of range (1 - $columns)")
@@ -75,7 +74,7 @@ fun makeMove(board: MutableList<MutableList<Char>>, playerName: String, columns:
         }
     }
 
-    //Вызвать функцию проверки победителя.
+    //Call the winner verification function.
     if (playerInput != "end") {
         val win: Boolean = trackingMoves(playerInput, board, figure, rowForSearch)
         if (win) return "Player $playerName won"
@@ -222,7 +221,6 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                 var searchRow = row - 1
 
                 //right direction search
-
                 if (columnIndex + columnStep * 3 <= board[row].size - columnStep) {
                     for (i in columnIndex + columnStep..columnIndex + columnStep * 3 step columnStep) {
                         if (board[searchRow][i] == figure) count++
@@ -254,6 +252,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                         if (board[searchRow][i] == figure) count++
                     }
                 }
+
                 //down direction search
                 if (count != 4 && row + 3 <= board.size - 2) {
                     count = 1
@@ -278,6 +277,7 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
                         searchRow++
                     }
                 }
+
                 //left direction search
                 if (count != 4 && columnIndex - columnStep * 3 >= 1) {
                     count = 1
@@ -382,6 +382,50 @@ fun trackingMoves(move: String, board: MutableList<MutableList<Char>>, figure: C
     return result
 }
 
+fun startGameScreen (rows: Int, columns: Int, firstPlayerName: String ,secondPlayerName: String): Int {
+    var numberOfGames: String
+    while (true) {
+        println("Do you want to play single or multiple games?")
+        println("For a single game, input 1 or press Enter")
+        println("Input a number of games:")
+        numberOfGames = readLine()!!
+        if (numberOfGames.toIntOrNull() != null) {
+            if (numberOfGames.toInt() > 0) break else println("Invalid input")
+        } else if (numberOfGames == "") break else println("Invalid input")
+    }
+
+    println("$firstPlayerName VS $secondPlayerName")
+    println("$rows X $columns board")
+
+    println(
+        if (
+            numberOfGames == "" ||
+            numberOfGames.toIntOrNull() != null &&
+            numberOfGames == "1") {
+            "Single game"
+        } else "Total $numberOfGames games\nGame #1"
+    )
+
+    return if (numberOfGames == "") 1 else numberOfGames.toInt()
+}
+
+fun playerNameRequest (prefix: String): String {
+    var name: String
+    do {
+        println("$prefix player's name:")
+        name = readLine()!!
+    } while (name == "")
+    return name
+}
+
+fun clearBoard(board: MutableList<MutableList<Char>>) {
+    for (row in 1 until board.size - 1) {
+        for (col in 1 until board[row].size - 1 step 2) {
+            board[row][col] = WHITESPACE_CHAR
+        }
+    }
+}
+
 fun letsPlay(
     board: MutableList<MutableList<Char>>,
     firstPlayerName: String,
@@ -389,62 +433,96 @@ fun letsPlay(
     columns: Int,
     firstPlayerFigure: Char,
     secondPlayerFigure: Char,
+    numberOfGames: Int,
 ) {
     var countFirstPlayerMoves = 0
     var countSecondPlayerMoves = 0
+    var status: String
+    val multiplayer = numberOfGames > 1
+    var firstPlayerPoints = 0
+    var secondPlayerPoints = 0
+    var gamesCount = 1
 
-    while (true) {
-        val firstPlayerOut = makeMove(board, firstPlayerName, columns, firstPlayerFigure)
-        countFirstPlayerMoves++
-        if (firstPlayerOut.toIntOrNull() == null && firstPlayerOut.lowercase() != "end") {
-            println("$firstPlayerOut\nGame over!")
-            break
-        } else if (firstPlayerOut.lowercase() == "end") {
-            break
-        } else if (countFirstPlayerMoves + countSecondPlayerMoves == (board.size - 1) * columns) {
-            println("It is a draw\nGame over!")
-            break
-        }
-
-
-        val secondPlayerOut = makeMove(board, secondPlayerName, columns, secondPlayerFigure)
-        countSecondPlayerMoves++
-        if (secondPlayerOut.toIntOrNull() == null && secondPlayerOut.lowercase() != "end") {
-            println("$secondPlayerOut\nGame over!")
-            break
-        } else if (secondPlayerOut.lowercase() == "end") {
-            break
-        } else if (countFirstPlayerMoves + countSecondPlayerMoves == (board.size - 1) * columns) {
-            println("It is a draw")
-            break
+    fun check(playerMove: String): String {
+        return when {
+            playerMove.toIntOrNull() == null && playerMove.lowercase() != "end" -> {
+                println(playerMove)
+                "win"
+            }
+            countFirstPlayerMoves + countSecondPlayerMoves == (board.size - 1) * columns -> {
+                println("It is a draw")
+                "draw"
+            }
+            else -> "waitNextMove"
         }
     }
+
+
+    AllGames@ for (i in 1..numberOfGames) {
+        while (true) {
+            val firstPlayerMove = makeMove(board, firstPlayerName, columns, firstPlayerFigure)
+            if (firstPlayerMove.lowercase() == "end") break@AllGames
+            countFirstPlayerMoves++
+
+            status = check(firstPlayerMove)
+            if (status == "win") {
+                if (multiplayer) {
+                    firstPlayerPoints += 2
+                    println("Score")
+                    println("$firstPlayerName: $firstPlayerPoints $secondPlayerName: $secondPlayerPoints")
+                    break
+                } else break@AllGames
+
+            } else if (status == "draw") {
+                if (multiplayer) {
+                    firstPlayerPoints += 1
+                    secondPlayerPoints += 1
+                    println("Score")
+                    println("$firstPlayerName: $firstPlayerPoints $secondPlayerName: $secondPlayerPoints")
+                    break
+                } else break@AllGames
+            }
+
+            val secondPlayerMove = makeMove(board, secondPlayerName, columns, secondPlayerFigure)
+            if (secondPlayerMove.lowercase() == "end") break@AllGames
+            countSecondPlayerMoves++
+
+            status = check(secondPlayerMove)
+            if (status == "win") {
+                if (multiplayer) {
+                    secondPlayerPoints += 2
+                    println("Score")
+                    println("$firstPlayerName: $firstPlayerPoints $secondPlayerName: $secondPlayerPoints")
+                    break
+                } else break@AllGames
+            } else if (status == "draw") {
+                if (multiplayer) {
+                    firstPlayerPoints += 1
+                    secondPlayerPoints += 1
+                    println("Score")
+                    println("$firstPlayerName: $firstPlayerPoints $secondPlayerName: $secondPlayerPoints")
+                    break
+                } else break@AllGames
+            }
+        }
+        clearBoard(board)
+        gamesCount++
+        println("Game #$gamesCount")
+        drawBoard(columns, board)
+    }
+    println("Game over!")
 }
 
 fun main() {
     println("Connect Four")
+    val firstPlayerName: String = playerNameRequest("First")
+    val secondPlayerName: String = playerNameRequest("Second")
     val board: MutableList<MutableList<Char>>
-    var firstPlayerName: String
-    var secondPlayerName: String
     var boardSize: String
     val rows: Int
     val columns: Int
+    val numberOfGames: Int
 
-    /*Request to enter the name of the first player
-    The player's name cannot be empty*/
-    while (true) {
-        println("First player's name:")
-        firstPlayerName = readLine()!!
-        if (firstPlayerName != "") break
-    }
-
-    /*Request to enter the name of the second player
-    The player's name cannot be empty*/
-    while (true) {
-        println("Second player's name:")
-        secondPlayerName = readLine()!!
-        if (secondPlayerName != "") break
-    }
 
     //Request to enter the size of the game board
     while (true) {
@@ -455,20 +533,11 @@ fun main() {
 
         /* If the user has not entered the parameters, the board sizes are set by default.
         Otherwise, the input is checked for correctness*/
-
         if (boardSize == "") {
-            rows = 6
-            columns = 7
-
-            println("$firstPlayerName VS $secondPlayerName")
-            println("$rows X $columns board")
-
-            /*The drawBoard function of the same name draws a game board.
-            The game board is drawn with default parameters*/
-            board = buildBoard(6, 7)
+            columns = DEFAULT_NUMBERS_OF_COLUMNS
+            numberOfGames = startGameScreen(DEFAULT_NUMBERS_OF_ROWS, columns, firstPlayerName, secondPlayerName)
+            board = buildBoard(DEFAULT_NUMBERS_OF_ROWS, columns)
             drawBoard(columns, board)
-
-
             break
         } else {
             boardSize = boardSize.replace("\\s".toRegex(), "")
@@ -494,14 +563,9 @@ fun main() {
                             rows = tmpValues[0].toInt()
                             columns = tmpValues[1].toInt()
 
-                            println("$firstPlayerName VS $secondPlayerName")
-                            println("$rows X $columns board")
-
-                            /*The drawBoard function of the same name draws a game board.
-                            At this point, the parameter input check was successful*/
+                            numberOfGames = startGameScreen(rows, columns, firstPlayerName, secondPlayerName)
                             board = buildBoard(rows, columns)
                             drawBoard(columns, board)
-
                             break
                         }
                     }
@@ -511,6 +575,5 @@ fun main() {
             }
         }
     }
-
-    letsPlay(board, firstPlayerName, secondPlayerName, columns, FIRST_PLAYER_DISC, SECOND_PLAYER_DISC)
+    letsPlay(board, firstPlayerName, secondPlayerName, columns, FIRST_PLAYER_DISC, SECOND_PLAYER_DISC, numberOfGames)
 }
